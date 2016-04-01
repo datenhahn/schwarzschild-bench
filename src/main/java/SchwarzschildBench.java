@@ -1,3 +1,4 @@
+import org.apache.commons.lang3.time.StopWatch;
 import org.jblas.DoubleMatrix;
 import org.jblas.MatrixFunctions;
 
@@ -111,6 +112,8 @@ public class SchwarzschildBench {
 
     private static void cmfj(int nlyr, int t0, int p0) {
 
+        StopWatch watch = new StopWatch();
+        watch.start();
         DoubleMatrix pt = DoubleMatrix.linspace(0, p0, nlyr + 1);
         DoubleMatrix pm = pt.getRange(1, pt.rows).add(pt.getRange(0, pt.rows - 1)).div(2);
 
@@ -162,12 +165,14 @@ public class SchwarzschildBench {
             }
             lastBigT.copy(bigT);
         }
-
+        watch.stop();
         System.out.println("== Converged ==");
 
         for (int k = 0; k < nlyr; k++) {
             System.out.println("Pressure " + pm.get(k) + "  Temperature " + bigT.get(k));
         }
+
+        System.out.println("Time: " + watch.getTime() + "ms");
         //        print "== Converged =="
 //        for k in xrange(nlyr):
 //        print k, " Pressure %s  Temperature %s" % (pm[k], T[k])
