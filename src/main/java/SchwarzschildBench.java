@@ -15,12 +15,17 @@ public class SchwarzschildBench {
 //            """ convert Temperature in K to potential Temperature at reference pressure p0 """
 //            return T * (p0/p)**(2./7)
 
-    private static DoubleMatrix bigT2theta(DoubleMatrix bigT, DoubleMatrix p, double p0) {
-        return bigT.mul(MatrixFunctions.pow((DoubleMatrix.scalar(p0).div(p)), (2. / 7)));
+    private static DoubleMatrix bigT2theta(DoubleMatrix bigT, DoubleMatrix pow) {
+        return bigT.mul(pow);
     }
 
-    private static DoubleMatrix theta2BigT(DoubleMatrix bigT, DoubleMatrix p, double p0) {
-        return bigT.div(MatrixFunctions.pow((DoubleMatrix.scalar(p0).div(p)), (2. / 7)));
+    private static final double POWER = (2. / 7);
+    private static DoubleMatrix calcPow(DoubleMatrix p, double p0) {
+        return MatrixFunctions.pow((DoubleMatrix.scalar(p0).div(p)), POWER);
+    }
+
+    private static DoubleMatrix theta2BigT(DoubleMatrix bigT, DoubleMatrix pow) {
+        return bigT.div(pow);
     }
 
     private static double rmse(DoubleMatrix a, DoubleMatrix b) {
@@ -133,6 +138,8 @@ public class SchwarzschildBench {
 
         boolean converged = false;
 
+        DoubleMatrix pow = calcPow(pm, p0);
+
         while (!converged) {
             DoubleMatrix dTau = DoubleMatrix.ones(nlyr).mul(1).div(nlyr);
             DoubleMatrix w0 = DoubleMatrix.zeros(nlyr);
@@ -154,11 +161,11 @@ public class SchwarzschildBench {
 
             bigT.addi(tInc.mul(dt));
 
-            DoubleMatrix new_theta = reverse(bigT2theta(bigT, pm, p0).sort());
-            bigT = theta2BigT(new_theta, pm, p0);
+            DoubleMatrix new_theta = reverse(bigT2theta(bigT, pow).sort());
+            bigT = theta2BigT(new_theta, pow);
 
             double residual = rmse(lastBigT, bigT);
-            System.out.println("residual: " + residual);
+//            System.out.println("residual: " + residual);
 
             if (residual < 1e-4) {
                 converged = true;
@@ -166,11 +173,11 @@ public class SchwarzschildBench {
             lastBigT.copy(bigT);
         }
         watch.stop();
-        System.out.println("== Converged ==");
+//        System.out.println("== Converged ==");
 
-        for (int k = 0; k < nlyr; k++) {
-            System.out.println("Pressure " + pm.get(k) + "  Temperature " + bigT.get(k));
-        }
+//        for (int k = 0; k < nlyr; k++) {
+//            System.out.println("Pressure " + pm.get(k) + "  Temperature " + bigT.get(k));
+//        }
 
         System.out.println("Time: " + watch.getTime() + "ms");
         //        print "== Converged =="
@@ -247,6 +254,9 @@ public class SchwarzschildBench {
 //        for (Double num : matrix.toArray()) {
 //            System.out.println(num);
 //        }
-        cmfj();
+        long max = 100;
+        for(int i = 0; i < max; i++) {
+            cmfj();
+        }
     }
 }
