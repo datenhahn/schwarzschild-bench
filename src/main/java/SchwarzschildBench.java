@@ -50,11 +50,11 @@ public class SchwarzschildBench {
 
         int ke = dTau.length;
 
-        DoubleMatrix kabs = dTau.mul(w0.add(-1));
+        DoubleMatrix kabs = dTau.mul(DoubleMatrix.scalar(1).sub(w0));
 
         for (int imu = 0; imu < nmu; imu++) {
             double mu = (imu + 0.5) * dmu;
-            DoubleMatrix bigT = MatrixFunctions.exp(kabs.div(mu));
+            DoubleMatrix bigT = MatrixFunctions.exp(kabs.mul(-1).div(mu));
             double lUp = bigB.get(ke - 1) * (1 - ag);
             eUp.put(ke, eUp.get(ke) + lUp * mu);
 
@@ -70,17 +70,16 @@ public class SchwarzschildBench {
                 lDn = lDn * bigT.get(k) + bigB.get(k) * (1 - bigT.get(k));
                 eDown.put(k + 1, eDown.get(k + 1) + lDn * mu);
             }
-
-            eUp.muli(2).muli(Math.PI).muli(dmu);
-            eDown.muli(2).muli(Math.PI).muli(dmu);
-            divergencyE =
-                    eUp.getRange(1, eUp.rows)
-                       .sub(eUp.getRange(0, eUp.rows - 1))
-                       .add(eDown.getRange(0, eDown.rows - 1)).sub(eDown.getRange(1, eDown.rows));
-            divergencyE.put(divergencyE.rows-1, divergencyE.get(divergencyE.rows - 1) + eDown.get(eDown.rows                                                                                              - 1)
-                                              - eUp.get(eUp.rows - 1));
-
         }
+
+        eUp.muli(2).muli(Math.PI).muli(dmu);
+        eDown.muli(2).muli(Math.PI).muli(dmu);
+        divergencyE.copy(
+                eUp.getRange(1, eUp.rows)
+                   .sub(eUp.getRange(0, eUp.rows - 1))
+                   .add(eDown.getRange(0, eDown.rows - 1)).sub(eDown.getRange(1, eDown.rows)));
+        divergencyE.put(divergencyE.rows-1, divergencyE.get(divergencyE.rows - 1) + eDown.get(eDown.rows                                                                                              - 1)
+                                            - eUp.get(eUp.rows - 1));
     }
 //        for imu in xrange(Nmu):
 //            mu = (imu + .5)*dmu
@@ -147,7 +146,7 @@ public class SchwarzschildBench {
 
             DoubleMatrix
                     tInc =
-                    divE.mul(GRAVITY / CP).div(pt.getRange(1, pt.rows).sub(pt.getRange(0, pt.rows - 1)));
+                    divE.mul(GRAVITY).div(CP).div(pt.getRange(1, pt.rows).sub(pt.getRange(0, pt.rows - 1)));
             double dt = 1. / MatrixFunctions.abs(tInc).max();
 
             bigT.addi(tInc.mul(dt));
@@ -182,9 +181,9 @@ public class SchwarzschildBench {
         if (input.columns > 1) {
             throw new IllegalArgumentException("only supports 1 column matrices");
         } else {
-            DoubleMatrix result = new DoubleMatrix(input.columns);
-            for (int i = 0; i < input.columns; i++) {
-                result.put(i, input.get(input.columns - i - 1));
+            DoubleMatrix result = new DoubleMatrix(input.rows);
+            for (int i = 0; i < input.rows; i++) {
+                result.put(i, input.get(input.rows - i - 1));
             }
             return result;
         }
